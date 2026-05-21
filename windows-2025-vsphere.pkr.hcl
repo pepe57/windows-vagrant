@@ -85,7 +85,7 @@ source "vsphere-iso" "windows-2025-amd64" {
   ]
   iso_paths = [
     "[${var.vsphere_datastore}] iso/windows-2025-${basename(var.iso_url)}",
-    "[${var.vsphere_datastore}] iso/VMware-tools-windows-13.0.10-25056151.iso",
+    "[${var.vsphere_datastore}] iso/VMware-tools-windows-13.1.0-25218885.iso",
   ]
   network_adapters {
     network      = var.vsphere_network
