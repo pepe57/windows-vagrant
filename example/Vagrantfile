@@ -8,6 +8,43 @@ VM_OS_DISK_GB = 200
 
 require 'open3'
 
+def set_libvirt_os_information(machine)
+  require 'nokogiri'
+  # see virt-xml --osinfo list
+  # see osinfo-query os
+  os_variant = if machine.config.vm.box =~ /^windows-([^-]+?)-/
+    {
+      '2022' => '2k22',
+      '2025' => '2k25',
+      '11' => '11',
+    }[$1]
+  end
+  raise "Unsupported box name '#{machine.config.vm.box}'." unless os_variant
+  metadata_xml = <<~XML
+    <metadata>
+      <libosinfo:libosinfo xmlns:libosinfo="http://libosinfo.org/xmlns/libvirt/domain/1.0">
+        <libosinfo:os id="http://microsoft.com/win/#{os_variant}"/>
+      </libosinfo:libosinfo>
+    </metadata>
+  XML
+  metadata_node = Nokogiri::XML::DocumentFragment.parse(metadata_xml)
+  xml, stderr, status = Open3.capture3('virsh', 'dumpxml', machine.id)
+  raise "Failed to get domain XML: #{stderr}" unless status.exitstatus == 0
+  doc = Nokogiri::XML(xml)
+  doc.at_xpath('//domain/metadata')&.remove
+  description = doc.at_xpath('//domain/description')
+  if description
+    description.after(metadata_node)
+  else
+    doc.root << metadata_node
+  end
+  Open3.popen3('virsh', 'define', '/dev/stdin') do |stdin, stdout, stderr, wait_thr|
+    stdin.write(doc.to_xml)
+    stdin.close
+    raise "Failed to define domain: #{stderr.read}" if wait_thr.value.exitstatus != 0
+  end
+end
+
 Vagrant.configure(2) do |config|
   config.vm.box = 'windows-2022-amd64'
   #config.vm.box = 'windows-2022-uefi-amd64'
@@ -33,6 +70,8 @@ Vagrant.configure(2) do |config|
     lv.machine_virtual_size = VM_OS_DISK_GB
     config.trigger.before :'VagrantPlugins::ProviderLibvirt::Action::StartDomain', type: :action do |trigger|
       trigger.ruby do |env, machine|
+        # set the os information.
+        set_libvirt_os_information(machine)
         # modify the scsi controller model to virtio-scsi.
         # see https://github.com/vagrant-libvirt/vagrant-libvirt/pull/692
         # see https://github.com/vagrant-libvirt/vagrant-libvirt/issues/999
