@@ -59,7 +59,9 @@ source "qemu" "windows-2022-uefi-amd64" {
   memory       = 4096
   qemuargs = [
     ["-bios", "/usr/share/ovmf/OVMF.fd"],
-    ["-cpu", "host"],
+    ["-cpu", "host,hv-passthrough"],
+    ["-rtc", "base=localtime,clock=host"],
+    ["-no-hpet"],
     ["-device", "qemu-xhci"],
     ["-device", "virtio-tablet"],
     ["-device", "virtio-scsi-pci,id=scsi0"],
