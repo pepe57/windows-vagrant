@@ -81,11 +81,11 @@ source "qemu" "windows-11-iot-24h2-amd64" {
     ["-device", "virtio-net,netdev=user.0"],
     ["-vga", "qxl"],
     ["-device", "virtio-serial-pci"],
-    ["-chardev", "socket,path=/tmp/{{ .Name }}-qga.sock,server,nowait,id=qga0"],
+    ["-chardev", "socket,path=/tmp/{{ .Name }}-qga.sock,server=on,wait=off,id=qga0"],
     ["-device", "virtserialport,chardev=qga0,name=org.qemu.guest_agent.0"],
     ["-chardev", "spicevmc,id=spicechannel0,name=vdagent"],
     ["-device", "virtserialport,chardev=spicechannel0,name=com.redhat.spice.0"],
-    ["-spice", "unix,addr=/tmp/{{ .Name }}-spice.socket,disable-ticketing"],
+    ["-spice", "unix=on,addr=/tmp/{{ .Name }}-spice.socket,disable-ticketing=on"],
   ]
   disk_interface = "virtio-scsi"
   disk_cache     = "unsafe"
