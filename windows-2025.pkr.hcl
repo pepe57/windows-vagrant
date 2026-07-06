@@ -68,14 +68,12 @@ variable "vagrant_box" {
 }
 
 source "qemu" "windows-2025-amd64" {
-  accelerator  = "kvm"
-  machine_type = "q35"
-  cpus         = 2
-  memory       = 4096
+  cpus   = 2
+  memory = 4096
   qemuargs = [
+    ["-machine", "type=q35,accel=kvm,hpet=off"],
     ["-cpu", "host,hv-passthrough"],
     ["-rtc", "base=localtime,clock=host"],
-    ["-no-hpet"],
     ["-device", "qemu-xhci"],
     ["-device", "virtio-tablet"],
     ["-device", "virtio-scsi-pci,id=scsi0"],
